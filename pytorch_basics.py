@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from torch.autograd import Variable
 
 # numpy -> torch tensors
 np_arr = np.ones((2,2))
@@ -41,4 +42,24 @@ print(rand_tensor)
 
 print(rand_tensor.mean(dim=0))
 print(rand_tensor.std(dim=0))
+
+# Variables
+a = Variable(torch.ones(2,2), requires_grad=True)
+b = Variable(torch.rand(2,2), requires_grad=True)
+
+print(a + b)
+
+# gradients
+x = Variable(torch.ones(2), requires_grad=True)
+
+y = 5 * (x + 1) ** 2
+print(y)
+
+out = (1/2) * torch.sum(y)
+print(out)
+
+out.backward()
+
+print(x.grad)
+
 
