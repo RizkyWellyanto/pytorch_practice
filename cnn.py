@@ -85,6 +85,10 @@ class CNNModel(nn.Module):
 # STEP 4: Instantiate Model Class
 model = CNNModel()
 
+# USE GPU IF CUDA IS AVAILABLE
+if torch.cuda.is_available():
+    model.cuda()
+
 # STEP 5: Instantiate Loss Function
 loss_func = nn.CrossEntropyLoss()
 
@@ -97,8 +101,12 @@ iter = 0
 for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
         # Load images as Variable
-        images = Variable(images)
-        labels = Variable(labels)
+        if torch.cuda.is_available():
+            images = Variable(images.cuda())
+            labels = Variable(labels.cuda())
+        else:
+            images = Variable(images)
+            labels = Variable(labels)
 
         # Clear gradient w.r.t. parameters
         optimizer.zero_grad()
@@ -125,7 +133,10 @@ for epoch in range(num_epochs):
             # Iterate through test dataset
             for images, labels, in test_loader:
                 # Load images to a Torch Variable
-                images = Variable(images)
+                if torch.cuda.is_available():
+                    images = Variable(images.cuda())
+                else:
+                    images = Variable(images)
 
                 # Get the output from the model
                 outputs = model(images)
@@ -137,7 +148,10 @@ for epoch in range(num_epochs):
                 total += labels.size(0)
 
                 # Total correct predictions
-                correct += (predicted == labels).sum()
+                if torch.cuda.is_available():
+                    correct += (predicted.cpu() == labels.cpu()).sum()
+                else:
+                    correct += (predicted == labels).sum()
 
             accuracy = 100 * correct / total
 
