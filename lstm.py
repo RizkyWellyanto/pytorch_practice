@@ -1,8 +1,8 @@
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import torchvision.transforms as tf
 import torchvision.datasets as dset
+from torch.autograd import Variable
 
 # STEP 1: Get Dataset =======================================================
 train_dataset = dset.MNIST(root='./data',
@@ -35,9 +35,9 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False)
 
 # STEP 3: Create Model Class =================================================
-class RNNModel(nn.Module):
+class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
-        super(RNNModel, self).__init__()
+        super(LSTMModel, self).__init__()
 
         # Hidden dimensions
         self.hidden_dim = hidden_dim
@@ -47,7 +47,7 @@ class RNNModel(nn.Module):
 
         # Building RNN
         # batch_first=True causes input/output tensor to be of shape (batch_dim, seq_dim, input_dim)
-        self.rnn = nn.RNN(input_dim, hidden_dim, layer_dim, batch_first=True, nonlinearity='tanh')
+        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
 
         # Readout layer
         self.fc = nn.Linear(hidden_dim, output_dim)
@@ -57,11 +57,13 @@ class RNNModel(nn.Module):
         # (layer_dim, batch_size, hidden_dim)
         if torch.cuda.is_available():
             h0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).cuda())
+            c0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).cuda())
         else:
             h0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim))
+            c0 = Variable(torch.zeros(self.layer_dim, x.size(0), self.hidden_dim))
 
         # One time step
-        out, hn = self.rnn(x, h0)
+        out, (hn, cn) = self.lstm(x, (h0, c0))
 
         # Index hidden state of last time step
         # out.size() --> 100, 28, 100
@@ -74,10 +76,10 @@ class RNNModel(nn.Module):
 # STEP 4: Instantiate Model Class
 input_dim = 28
 hidden_dim = 100
-layer_dim = 2  # ONLY CHANGE IS HERE FROM ONE LAYER TO TWO LAYER
+layer_dim = 1
 output_dim = 10
 
-model = RNNModel(input_dim, hidden_dim, layer_dim, output_dim)
+model = LSTMModel(input_dim, hidden_dim, layer_dim, output_dim)
 
 # USE GPU IF CUDA IS AVAILABLE
 if torch.cuda.is_available():
@@ -155,5 +157,8 @@ for epoch in range(num_epochs):
 
             # Print Loss
             print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.item(), accuracy))
+
+
+
 
 
